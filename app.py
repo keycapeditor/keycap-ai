@@ -1,19 +1,24 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from llama_cpp import Llama
+import requests
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # handle CORS automatically
 
-# ---- Load the GGUF model ----
-llm = Llama.from_pretrained(
-    repo_id="jfer1015/Mistral-7B-Instruct-v0.3-Q4_K_M-GGUF",
-    filename="mistral-7b-instruct-v0.3-q4_k_m.gguf"
-)
+# ---- DeepSeek API ----
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
+HEADERS = {
+    "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+    "Content-Type": "application/json"
+}
+
+# ---- Flask Endpoints ----
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"status": "Mistral 7B Instruct Flask API running"})
+    return jsonify({"status": "DeepSeek Flask API running"})
 
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -22,11 +27,29 @@ def generate():
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
 
-    # ---- Generate text ----
-    output = llm(prompt, max_tokens=200, temperature=0.7)
-    generated_text = output.get("choices")[0]["text"]
+    # ---- Payload for DeepSeek ----
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        "stream": False
+    }
+
+    try:
+        response = requests.post(DEEPSEEK_URL, headers=HEADERS, json=payload)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+    result = response.json()
+    # OpenAI-style response structure
+    generated_text = result["choices"][0]["message"]["content"]
 
     return jsonify({"response": generated_text})
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # Use Render-friendly port or default 5000
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
