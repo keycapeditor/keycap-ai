@@ -2,5 +2,3 @@ flask
 requests
 gunicorn
 flask_cors
-llama-cpp-python
-huggingface-hub
