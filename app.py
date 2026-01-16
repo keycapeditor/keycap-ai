@@ -12,13 +12,25 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
+# ---- CORS ----
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+# --------------
+
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"status": "LLaMA Flask API running"})
 
-@app.route("/generate", methods=["POST"])
+@app.route("/generate", methods=["POST", "OPTIONS"])
 def generate():
-    data = request.json
+    if request.method == "OPTIONS":
+        return "", 200
+
+    data = request.json or {}
     prompt = data.get("prompt", "")
 
     if not prompt:
