@@ -51,7 +51,7 @@ def generate():
     try:
         completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="gpt-oss-120b",
+            model="llama3.1-8b",
             max_completion_tokens=1024,
             temperature=0.2,
             top_p=1,
