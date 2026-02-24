@@ -29,6 +29,13 @@ def check_limit(user_id):
 def home():
     return jsonify({"status": "Cerebras Flask API with daily limit running"})
 
+@app.route("/cron", methods=["GET"])
+def cron():
+    # Example background task
+    print("Cron ran at", datetime.utcnow())
+
+    return "OK", 200
+
 @app.route("/generate", methods=["POST", "OPTIONS"])
 def generate():
     if request.method == "OPTIONS":
